@@ -17,7 +17,7 @@ keywords: mysql, 性能优化
 
 这个方法，几个方案中最慢的一个，但是我们还是把它列举了出来，没有比较就没有伤害，所以一定要有一个速度慢的衬托才行。它之所以慢，是因为 在order by 子句后的 rand() 函数会先为每一行数据生成一个 1~0之间的随机数，然后在根据这个数字，进行排序再选出最小的N行数据（N取决于limit N)。
 
-```mysql
+```sql
 mysql> explain select * from users order by RAND() limit 1\G
 *************************** 1. row ***************************
            id: 1
@@ -41,17 +41,17 @@ possible_keys: NULL
 
 上面使用 order by rand() 方法，我们说了它的性能非常差，这个方法就是对它的改进，同样是使用rand() 函数不过这次我们把，它用在 where条件中。
 
-```mysql
+```sql
 SELECT id FROM users, (SELECT ((1/COUNT(*))*100) as n FROM users) as x WHERE RAND()<=x.n LIMIT 1;
 ```
 
 上面的方法，首先使用了一个子查询，计算出你想要随机出的记录所在总记录的百分比，然后再乘上100（防止比例过小）再使用这个小数，去和随机数比较，取出小于或等于这个小数的记录。举个例子 你想从一百万条记录中随机取10条记录，那么算式就是 10/1_000_000 * 100 = 0.001 查询语句就是：
 
-```mysql
+```sql
 SELECT id FROM users WHERE RAND()<=0.001 LIMIT 10;
 ```
 
-```mysql
+```sql
 mysql> explain SELECT id FROM users, (SELECT ((1/COUNT(*))*100) as n FROM users) as x WHERE RAND()<=x.n LIMIT 1\G
 *************************** 1. row ***************************
            id: 1
@@ -96,7 +96,7 @@ possible_keys: NULL
 
 改进方法1中达到了快速数据的目的，但是它的随机性不好，那么改进方法2就是使用一定的性能去换取随机分布率。
 
-```mysql
+```sql
 SELECT id FROM users, (SELECT ((1/COUNT(*))*100) as n FROM users) as x WHERE RAND()<=x.n ORDER BY RAND() LIMIT 1;
 ```
 
@@ -122,7 +122,7 @@ SELECT * FROM users as u JOIN (SELECT ROUND(RAND() * (SELECT MAX(id) FROM users)
 
 我们使用下面的表结构，去分别创建（10K，25K，50K，100K，250K，500K，1000K）的数据，然后分别使用上面的几种方案进行查询，看看他们的性能如何。
 
-```mysql
+```sql
 +------------+--------------+------+-----+---------+----------------+
 | Field      | Type         | Null | Key | Default | Extra          |
 +------------+--------------+------+-----+---------+----------------+
