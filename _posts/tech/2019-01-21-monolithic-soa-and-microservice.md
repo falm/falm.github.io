@@ -2,7 +2,7 @@
 layout: post
 title: 从IT发展史看单体,SOA与微服务
 category: 技术
-tags: [系统架构,微服务]
+tags: [闲聊,微服务]
 keywords: SOA,microservice
 ---
 
